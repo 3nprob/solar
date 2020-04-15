@@ -8,6 +8,7 @@ export interface Account {
   accountID: string // is either `cosignerOf` or `publicKey`
   cosignerOf?: string
   id: string
+  isHardwareWalletAccount: boolean
   name: string
   publicKey: string
   requiresPassword: boolean
@@ -47,6 +48,7 @@ async function createAccountInstance(keyStore: KeyStoreAPI, keyID: string) {
   const account: Account = {
     cosignerOf: publicData.cosignerOf,
     id: keyID,
+    isHardwareWalletAccount: false,
     name: publicData.name,
     publicKey: publicData.publicKey,
     requiresPassword: publicData.password,
@@ -86,8 +88,33 @@ async function createAccountInstance(keyStore: KeyStoreAPI, keyID: string) {
           { accountName: publicData.name }
         )
       }
-
       return keyStore.signTransaction(account.id, transaction, password || "")
+    }
+  }
+  return account
+}
+
+async function createHardwareWalletAccountInstance(
+  keyStore: KeyStoreAPI,
+  hardwareWalletAccount: HardwareWalletAccount
+) {
+  const account: Account = {
+    id: `hardware-${hardwareWalletAccount.accountIndex}`,
+    isHardwareWalletAccount: true,
+    name: hardwareWalletAccount.name,
+    publicKey: hardwareWalletAccount.publicKey,
+    requiresPassword: false,
+    testnet: false,
+
+    async getPrivateKey() {
+      throw CustomError(
+        "HardwareWalletAccessPrivateKeyError",
+        `You cannot access the private key of a hardware wallet account.`
+      )
+    },
+
+    async signTransaction(transaction: Transaction) {
+      return keyStore.signTransactionWithHardwareWallet(Number(this.id), transaction)
     }
   }
   return account
@@ -163,10 +190,20 @@ export function AccountsProvider(props: Props) {
         .getKeyIDs()
         .then(async keyIDs => {
           const loadedAccounts = await Promise.all(keyIDs.map(keyID => createAccountInstance(keyStore, keyID)))
-          setAccounts(loadedAccounts)
           setNetworkSwitch(getInitialNetwork(loadedAccounts))
+          return loadedAccounts
         })
-        .catch(trackError)
+        .then(localAccounts => {
+          keyStore
+            .getHardwareWallets()
+            .then(async walletAccounts => {
+              const hwAccounts = await Promise.all(
+                walletAccounts.map(account => createHardwareWalletAccountInstance(keyStore, account))
+              )
+              setAccounts(localAccounts.concat(...hwAccounts))
+            })
+            .catch(trackError)
+        })
     } catch (error) {
       trackError(error)
     }
