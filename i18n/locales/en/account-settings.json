@@ -21,10 +21,19 @@
       "text": "Send remaining funds to"
     },
     "text": {
-      "1": "Are you sure you want to remove the account \"{{accountName}}\" from Solar? You can still use it elsewhere if you save the secret key.",
-      "2": " Make sure to backup your secret key or merge the funds into another account of yours, since there are still funds left!"
+      "local-account": {
+        "1": "Are you sure you want to remove the account \"{{accountName}}\" from Solar? You can still use it elsewhere if you save the secret key.",
+        "2": " Make sure to backup your secret key or merge the funds into another account of yours, since there are still funds left!"
+      },
+      "hardware-wallet-account": {
+        "1": "You can merge this account into an existing one.",
+        "2": "The remaining funds of this account will be transferred to the selected account."
+      }
     },
-    "title": "Confirm Account Removal",
+    "title": {
+      "hardware-wallet-account": "Confirm Account Merge",
+      "local-account": "Confirm Account Deletion"
+    },
     "warning-dialog": {
       "close": {
         "label": "OK"
@@ -204,7 +213,10 @@
   "settings": {
     "delete-account": {
       "text": {
-        "primary": "Merge or Remove Account"
+        "primary": {
+          "hardware-wallet-account": "Merge Account",
+          "local-account": "Merge or Delete Account"
+        }
       }
     },
     "export-secret-key": {

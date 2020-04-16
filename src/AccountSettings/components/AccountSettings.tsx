@@ -188,9 +188,20 @@ function AccountSettings(props: Props) {
             style={listItemTextStyle}
           />
         </AccountSettingsItem>
-        <React.Suspense fallback={null}>
-          <DeleteAccountItem {...props} listItemTextStyle={listItemTextStyle} onClick={navigateTo.deleteAccount} />
-        </React.Suspense>
+        <AccountSettingsItem
+          caret="right"
+          icon={<DeleteIcon style={{ fontSize: "100%" }} />}
+          onClick={navigateTo.deleteAccount}
+        >
+          <ListItemText
+            primary={
+              props.account.isHardwareWalletAccount
+                ? t("account-settings.settings.delete-account.text.primary.hardware-wallet-account")
+                : t("account-settings.settings.delete-account.text.primary.local-account")
+            }
+            style={listItemTextStyle}
+          />
+        </AccountSettingsItem>
       </List>
       <SettingsDialogs account={props.account} />
     </Carousel>
