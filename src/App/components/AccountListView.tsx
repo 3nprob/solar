@@ -1,6 +1,11 @@
 import React from "react"
 import { useTranslation } from "react-i18next"
+<<<<<<< HEAD
 import FormControlLabel from "@material-ui/core/FormControlLabel"
+=======
+import Button from "@material-ui/core/Button"
+import CircularProgress from "@material-ui/core/CircularProgress"
+>>>>>>> 1be0bf12 (Add bluetooth button to AccountListView)
 import IconButton from "@material-ui/core/IconButton"
 import makeStyles from "@material-ui/core/styles/makeStyles"
 import SettingsIcon from "@material-ui/icons/Settings"
@@ -8,12 +13,15 @@ import Switch from "@material-ui/core/Switch"
 import Tooltip from "@material-ui/core/Tooltip"
 import useMediaQuery from "@material-ui/core/useMediaQuery"
 import UpdateIcon from "@material-ui/icons/SystemUpdateAlt"
+import EnableBluetoothIcon from "@material-ui/icons/Bluetooth"
+import DisableBluetoothIcon from "@material-ui/icons/BluetoothDisabled"
 import DialogBody from "~Layout/components/DialogBody"
 import { Box, VerticalLayout } from "~Layout/components/Box"
 import { Section } from "~Layout/components/Page"
 import MainTitle from "~Generic/components/MainTitle"
 import { useRouter } from "~Generic/hooks/userinterface"
 import getUpdater from "~Platform/updater"
+import { stopBluetoothDiscovery, startBluetoothDiscovery, isBluetoothAvailable } from "~Platform/hardware-wallet"
 import AppNotificationPermission from "~Toasts/components/AppNotificationPermission"
 import { AccountsContext } from "../contexts/accounts"
 import { NotificationsContext, trackError } from "../contexts/notifications"
@@ -31,6 +39,20 @@ const useStyles = makeStyles({
 
   icon: {
     animation: "$glowing 5000ms infinite"
+  },
+  bluetoothProgress: {
+    position: "absolute",
+    top: 6,
+    left: 14,
+    zIndex: -1
+  },
+  root: {
+    display: "inline-flex",
+    alignItems: "center"
+  },
+  wrapper: {
+    margin: 8,
+    position: "relative"
   }
 })
 
@@ -42,6 +64,9 @@ function AllAccountsPage() {
   const testnetAccounts = React.useMemo(() => accounts.filter(account => account.testnet), [accounts])
   const [isUpdateInProgress, setUpdateInProgress] = React.useState(false)
   const { t } = useTranslation()
+
+  const [bluetoothAvailable, setBluetoothAvailable] = React.useState(false)
+  const [bluetoothDiscoveryRunning, setBluetoothDiscoveryRunning] = React.useState(false)
 
   const styles = useStyles()
   const isWidthMax450 = useMediaQuery("(max-width:450px)")
@@ -75,6 +100,60 @@ function AllAccountsPage() {
     </Tooltip>
   )
 
+  React.useEffect(() => {
+    function pollBluetoothState() {
+      isBluetoothAvailable().then(setBluetoothAvailable)
+    }
+
+    pollBluetoothState()
+    setInterval(() => {
+      pollBluetoothState()
+    }, 10000)
+  }, [])
+
+  const toggleBluetoothDiscovery = React.useCallback(async () => {
+    try {
+      if (!bluetoothDiscoveryRunning) {
+        startBluetoothDiscovery().then(() => setBluetoothDiscoveryRunning(true))
+      } else {
+        stopBluetoothDiscovery().then(() => setBluetoothDiscoveryRunning(false))
+      }
+    } catch (error) {
+      trackError(error)
+    }
+  }, [bluetoothDiscoveryRunning])
+
+  const bluetoothButton = (
+    <Tooltip
+      title={
+        !bluetoothAvailable
+          ? "Bluetooth not available"
+          : bluetoothDiscoveryRunning
+          ? "Stop Bluetooth Discovery"
+          : "Start Bluetooth Discovery"
+      }
+    >
+      <div className={styles.root}>
+        <div className={styles.wrapper}>
+          <IconButton
+            disabled={!bluetoothAvailable}
+            onClick={toggleBluetoothDiscovery}
+            color="secondary"
+            style={{
+              marginLeft: isWidthMax450 ? 0 : 8,
+              marginRight: -12,
+              color: "inherit",
+              opacity: !bluetoothAvailable ? 0.5 : undefined
+            }}
+          >
+            {bluetoothDiscoveryRunning ? <EnableBluetoothIcon /> : <DisableBluetoothIcon />}
+          </IconButton>
+          {bluetoothDiscoveryRunning && <CircularProgress size={36} className={styles.bluetoothProgress} />}
+        </div>
+      </div>
+    </Tooltip>
+  )
+
   const networkSwitchButton = (
     <FormControlLabel
       control={<Switch checked={networkSwitch === "testnet"} color="secondary" onChange={toggleNetwork} />}
@@ -102,6 +181,7 @@ function AllAccountsPage() {
             !updater.isUpdateDownloaded()
               ? updateButton
               : null}
+            {bluetoothButton}
             <IconButton
               onClick={() => router.history.push(routes.settings())}
               style={{ marginLeft: isWidthMax450 ? 0 : 8, marginRight: -12, color: "inherit" }}
@@ -113,6 +193,7 @@ function AllAccountsPage() {
       />
     ),
     [
+      bluetoothButton,
       isUpdateInProgress,
       isWidthMax450,
       networkSwitch,
