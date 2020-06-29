@@ -41,6 +41,7 @@ function Stage2() {
                   "/account/create/mainnet",
                   "/account/import/mainnet",
                   "/account/join/mainnet",
+                  "/account/import-hardware",
                   "/account/new/mainnet"
                 ]}
                 component={CreateMainnetAccount}

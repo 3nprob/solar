@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next"
 import { Keypair } from "stellar-sdk"
 import { Account, AccountsContext } from "~App/contexts/accounts"
 import { CustomError } from "~Generic/lib/errors"
+import { requestHardwareAccount } from "~Platform/hardware-wallet"
 import { AccountCreation, AccountCreationErrors } from "../types/types"
 
 function isAccountAlreadyImported(privateKey: string, accounts: Account[], testnet: boolean) {
@@ -41,6 +42,10 @@ function validateAccountCreation(t: TFunction, accounts: Account[], accountCreat
     errors.name = t("create-account.validation.no-account-name")
   }
 
+  if (accountCreation.importHardware && !accountCreation.walletID) {
+    errors.walletID = t("create-account.validation.no-wallet")
+  }
+
   if (accountCreation.requiresPassword && !accountCreation.password) {
     errors.password = t("create-account.validation.no-password")
   } else if (accountCreation.requiresPassword && accountCreation.repeatedPassword !== accountCreation.password) {
@@ -70,12 +75,13 @@ interface UseAccountCreationOptions {
 
 function useAccountCreation(options: UseAccountCreationOptions) {
   const { t } = useTranslation()
-  const { accounts, createAccount } = React.useContext(AccountsContext)
+  const { accounts, createAccount, createHardwareAccount } = React.useContext(AccountsContext)
   const [accountCreationErrors, setAccountCreationErrors] = React.useState<AccountCreationErrors>({})
 
   const [currentAccountCreation, setAccountCreation] = React.useState<AccountCreation>(() => ({
     cosigner: options.cosigner,
     import: options.import,
+    importHardware: false,
     name: getNewAccountName(t, accounts, options.testnet),
     password: "",
     repeatedPassword: "",
@@ -84,24 +90,39 @@ function useAccountCreation(options: UseAccountCreationOptions) {
   }))
 
   const createNewAccount = async (accountCreation: AccountCreation) => {
-    if (accountCreation.cosigner && !accountCreation.cosignerOf) {
-      throw CustomError(
-        "CosignerLackingKeyError",
-        "Cannot add key pair as co-signer of an account, since no public key for the account to co-sign has been provided"
-      )
+    // TODO: Multisig hw wallet ledger
+    if (accountCreation.importHardware) {
+      const walletID = accountCreation.walletID
+      if (!walletID) {
+        throw Error("No walletID provided for importing hardware account!")
+      }
+
+      const walletRelatedAccounts = accounts.filter(acc => acc.id.includes(walletID))
+      const walletAccountsIDs = walletRelatedAccounts.map(wallAcc => Number(wallAcc.id.split("-")[2]))
+      const nextAccountID = Math.max.apply(null, walletAccountsIDs) + 1
+      const newAccount = await requestHardwareAccount(walletID, nextAccountID)
+      const accountInstance = await createHardwareAccount(newAccount)
+      return accountInstance
+    } else {
+      if (accountCreation.cosigner && !accountCreation.cosignerOf) {
+        throw CustomError(
+          "CosignerLackingKeyError",
+          "Cannot add key pair as co-signer of an account, since no public key for the account to co-sign has been provided"
+        )
+      }
+
+      const keypair = accountCreation.import ? Keypair.fromSecret(accountCreation.secretKey!) : Keypair.random()
+
+      const account = await createAccount({
+        cosignerOf: accountCreation.cosignerOf,
+        name: accountCreation.name,
+        keypair,
+        password: accountCreation.requiresPassword ? accountCreation.password : null,
+        testnet: options.testnet
+      })
+
+      return account
     }
-
-    const keypair = accountCreation.import ? Keypair.fromSecret(accountCreation.secretKey!) : Keypair.random()
-
-    const account = await createAccount({
-      cosignerOf: accountCreation.cosignerOf,
-      name: accountCreation.name,
-      keypair,
-      password: accountCreation.requiresPassword ? accountCreation.password : null,
-      testnet: options.testnet
-    })
-
-    return account
   }
 
   return {

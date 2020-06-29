@@ -1,11 +1,7 @@
 import React from "react"
 import { useTranslation } from "react-i18next"
-<<<<<<< HEAD
-import FormControlLabel from "@material-ui/core/FormControlLabel"
-=======
-import Button from "@material-ui/core/Button"
 import CircularProgress from "@material-ui/core/CircularProgress"
->>>>>>> 1be0bf12 (Add bluetooth button to AccountListView)
+import FormControlLabel from "@material-ui/core/FormControlLabel"
 import IconButton from "@material-ui/core/IconButton"
 import makeStyles from "@material-ui/core/styles/makeStyles"
 import SettingsIcon from "@material-ui/icons/Settings"

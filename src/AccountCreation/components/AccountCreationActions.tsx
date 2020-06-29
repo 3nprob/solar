@@ -64,7 +64,18 @@ function AccountCreationActions(props: AccountCreationActionsProps) {
               onClick={props.onActionButtonClick}
               type="primary"
             >
-              {t("create-account.action.import")}
+              {t("create-account.action.import-standard-account")}
+            </ActionButton>
+          )
+        } else if (matchesRoute(router.location.pathname, routes.importHardwareAccount())) {
+          return (
+            <ActionButton
+              className={buttonClassName}
+              icon={<CheckIcon style={{ fontSize: "120%" }} />}
+              onClick={props.onActionButtonClick}
+              type="primary"
+            >
+              {t("create-account.action.import-hardware-account")}
             </ActionButton>
           )
         } else if (matchesRoute(router.location.pathname, routes.joinSharedAccount(props.testnet))) {

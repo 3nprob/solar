@@ -123,6 +123,7 @@ const AccountPageContent = React.memo(function AccountPageContent(props: Account
     matchesRoute(router.location.pathname, routes.createAccount(props.testnet), false) ||
     matchesRoute(router.location.pathname, routes.importAccount(props.testnet), false) ||
     matchesRoute(router.location.pathname, routes.joinSharedAccount(props.testnet), false) ||
+    matchesRoute(router.location.pathname, routes.importHardwareAccount(), false) ||
     matchesRoute(router.location.pathname, routes.newAccount(props.testnet), false)
 
   const showAccountCreationOptions = matchesRoute(router.location.pathname, routes.newAccount(props.testnet), false)
@@ -214,7 +215,7 @@ const AccountPageContent = React.memo(function AccountPageContent(props: Account
     ;(async () => {
       const account = await createAccount(accountCreation)
 
-      if (!accountCreation.import && !props.testnet) {
+      if (!accountCreation.import && !accountCreation.importHardware && !props.testnet) {
         setAccountToBackup(account)
       } else {
         router.history.push(routes.account(account.id))
@@ -227,7 +228,7 @@ const AccountPageContent = React.memo(function AccountPageContent(props: Account
       return
     }
 
-    if (!accountCreation.requiresPassword && !props.testnet) {
+    if (!accountCreation.requiresPassword && !accountCreation.importHardware && !props.testnet) {
       setNoPasswordDialogOpen(true)
     } else {
       createNewAccount()
@@ -280,7 +281,7 @@ const AccountPageContent = React.memo(function AccountPageContent(props: Account
         }
         editableAccountName={
           (showAccountSettings && !props.account?.isHardwareWalletAccount) ||
-          (showAccountCreation && !showAccountCreationOptions && !accountToBackup)
+          (showAccountCreation && !showAccountCreationOptions && !accountToBackup && !accountCreation.importHardware)
         }
         error={accountCreationErrors.name}
         onAccountSettings={navigateTo.accountSettings}
