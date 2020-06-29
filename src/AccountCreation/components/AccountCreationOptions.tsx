@@ -28,6 +28,12 @@ const InitialSelection = React.memo(
     const router = useRouter()
     const { t } = useTranslation()
 
+    const [connectedWallets, setConnectedWallets] = React.useState<HardwareWallet[]>([])
+
+    React.useEffect(() => {
+      getConnectedWallets().then(setConnectedWallets)
+    }, [])
+
     const createAccount = React.useCallback(() => {
       onUpdateAccountCreation({ cosigner: false, import: false })
       router.history.push(routes.createAccount(props.testnet))
@@ -47,8 +53,6 @@ const InitialSelection = React.memo(
       onUpdateAccountCreation({ requiresPassword: false, importHardware: true })
       router.history.push(routes.importHardwareAccount())
     }, [onUpdateAccountCreation, router.history])
-
-    const connectedWallets = getConnectedWallets()
 
     return (
       <VerticalLayout ref={ref} alignItems="center" margin="48px 0 24px" padding="0 8px">
