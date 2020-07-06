@@ -7,6 +7,7 @@ const accounts: Account[] = [
   {
     accountID: "GBPBFWVBADSESGADWEGC7SGTHE3535FWK4BS6UW3WMHX26PHGIH5NF4W",
     id: "testid1",
+    isHardwareWalletAccount: false,
     name: "My Testnet Account #1",
     publicKey: "GBPBFWVBADSESGADWEGC7SGTHE3535FWK4BS6UW3WMHX26PHGIH5NF4W",
     requiresPassword: false,
@@ -17,6 +18,7 @@ const accounts: Account[] = [
   {
     accountID: "GDNVDG37WMKPEIXSJRBAQAVPO5WGOPKZRZZBPLWXULSX6NQNLNQP6CFF",
     id: "testid2",
+    isHardwareWalletAccount: false,
     name: "My Testnet Account #2",
     publicKey: "GDNVDG37WMKPEIXSJRBAQAVPO5WGOPKZRZZBPLWXULSX6NQNLNQP6CFF",
     requiresPassword: false,
