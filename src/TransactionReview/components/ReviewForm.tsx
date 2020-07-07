@@ -85,42 +85,37 @@ function TxConfirmationForm(props: Props) {
 
   const handleTextFieldChange = React.useCallback(event => setFormValue("password", event.target.value), [])
 
-  const handleFormSubmission = React.useCallback(
-    async (event: React.SyntheticEvent) => {
-      event.preventDefault()
+  const handleFormSubmission = React.useCallback(async () => {
+    if (props.disabled) {
+      // Just a precaution; we shouldn't even get here if the component is disabled
+      return
+    }
 
-      if (props.disabled) {
-        // Just a precaution; we shouldn't even get here if the component is disabled
-        return
-      }
+    if (props.account.requiresPassword && !formValues.password) {
+      setLoading(false)
+      return setErrors({
+        ...errors,
+        password: new Error(t("account.transaction-review.validation.password-required"))
+      })
+    }
 
-      if (props.account.requiresPassword && !formValues.password) {
-        setLoading(false)
-        return setErrors({
+    setErrors({})
+    try {
+      await onConfirm(formValues)
+    } catch (error) {
+      if (error.name === "SignWithHardwareWalletError") {
+        setErrors({
           ...errors,
-          password: new Error(t("account.transaction-review.validation.password-required"))
+          signing: new Error(t("account.transaction-review.validation.signing-failed"))
         })
+      } else {
+        // re-throw error
+        throw error
       }
-
-      setErrors({})
-      try {
-        await onConfirm(formValues)
-      } catch (error) {
-        if (error.name === "SignWithHardwareWalletError") {
-          setErrors({
-            ...errors,
-            signing: new Error(t("account.transaction-review.validation.signing-failed"))
-          })
-        } else {
-          // re-throw error
-          throw error
-        }
-      } finally {
-        setLoading(false)
-      }
-    },
-    [props.disabled, props.account.requiresPassword, formValues, errors, t, onConfirm]
-  )
+    } finally {
+      setLoading(false)
+    }
+  }, [props.disabled, props.account.requiresPassword, formValues, errors, t, onConfirm])
 
   const DismissIcon = React.useMemo(() => <CloseIcon style={{ fontSize: "140%" }} />, [])
   const ConfirmIcon = React.useMemo(() => <CheckIcon />, [])
@@ -136,14 +131,17 @@ function TxConfirmationForm(props: Props) {
       // wrap in timeout because setLoading(true) will cause the submit button to be disabled
       // which prevents the form onSubmit() function from being called if handled synchronously
       setLoading(true)
+
       if (props.account.isHardwareWalletAccount) {
         setHardwareVerificationPending(true)
       }
+
+      handleFormSubmission()
     }, 0)
-  }, [props.account.isHardwareWalletAccount])
+  }, [handleFormSubmission, props.account.isHardwareWalletAccount])
 
   return (
-    <form id={formID} noValidate onSubmit={handleFormSubmission}>
+    <form id={formID} noValidate>
       <VerticalLayout>
         <TransactionSummary
           account={props.account}
@@ -185,6 +183,7 @@ function TxConfirmationForm(props: Props) {
           ) : null}
           {props.disabled ? null : (
             <ActionButton
+              disabled={props.loading || loading}
               icon={ConfirmIcon}
               form={formID}
               loading={props.loading || loading}
