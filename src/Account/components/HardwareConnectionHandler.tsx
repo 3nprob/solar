@@ -8,7 +8,7 @@ import Typography from "@material-ui/core/Typography"
 import { makeStyles } from "@material-ui/core"
 import { Account, AccountsContext } from "~App/contexts/accounts"
 import { DialogActionsBox, ActionButton } from "~Generic/components/DialogActions"
-import { useHorizonURL } from "~Generic/hooks/stellar"
+import { useHorizonURLs } from "~Generic/hooks/stellar"
 import { useIsMobile } from "~Generic/hooks/userinterface"
 import { useNetWorker } from "~Generic/hooks/workers"
 import { requestHardwareAccounts, getConnectedWallets } from "~Platform/hardware-wallet"
@@ -144,7 +144,13 @@ function HardwareConnectionHandler(props: Props) {
   const [walletConnected, setWalletConnected] = React.useState<boolean>(false)
 
   const netWorker = useNetWorker()
-  const horizonURL = useHorizonURL(false)
+  const horizonURLs = useHorizonURLs(
+    accounts.length > 0
+      ? accounts[0].testnet
+      : hardwareWalletAccounts.length > 0
+      ? hardwareWalletAccounts[0].testnet
+      : false
+  )
 
   const requestAccounts = React.useCallback(
     async (walletID, accountIndices) => {
@@ -159,7 +165,7 @@ function HardwareConnectionHandler(props: Props) {
       const initializedAccounts: Account[] = []
       let shouldFetchMore = false
       for (const account of hardwareAccounts) {
-        const accountData = await netWorker.fetchAccountData(horizonURL, account.publicKey)
+        const accountData = await netWorker.fetchAccountData(horizonURLs, account.publicKey)
         if (accountData) {
           // should fetch more if a non-empty account was imported
           shouldFetchMore = true
@@ -172,7 +178,7 @@ function HardwareConnectionHandler(props: Props) {
 
       return shouldFetchMore
     },
-    [createHardwareAccount, horizonURL, netWorker]
+    [createHardwareAccount, horizonURLs, netWorker]
   )
 
   const addWallet = React.useCallback(
@@ -225,7 +231,7 @@ function HardwareConnectionHandler(props: Props) {
     }
 
     return unsubscribe
-  }, [accounts, addWallet, createHardwareAccount, deleteAccount, horizonURL, netWorker, requestAccounts])
+  }, [accounts, addWallet, createHardwareAccount, deleteAccount, horizonURLs, netWorker, requestAccounts])
 
   React.useEffect(() => {
     if (hardwareWalletAccounts.length > 0) {
